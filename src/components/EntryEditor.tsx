@@ -9,12 +9,14 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { createId, type DiaryEntry, type Trip } from '../types/trip';
+import { createId, type DiaryEntry, type Trip, type Stop } from '../types/trip';
 import { useTrips } from '../state/TripContext';
 import { inputDate, parseDate, validateTrip } from '../lib/trip-utils';
 import { colors, shared } from '../lib/theme';
 import { Button, Icon, showError } from './UI';
 import { PhotoGrid, PhotoButtons } from './Photos';
+import LocationButton from './LocationButton';
+import { findNearbyStop, type CurrentPlace } from '../lib/location-utils';
 
 type Props = {
   trip: Trip;
@@ -33,6 +35,32 @@ export default function EntryEditor({ trip, stopId, entry, onClose, onSaved }: P
   const [date, setDate] = useState(inputDate(draft.date));
   const [selectedStop, setSelectedStop] = useState(stopId);
   const [saving, setSaving] = useState(false);
+  const [newStop, setNewStop] = useState<Stop | null>(null);
+  const [locationNotice, setLocationNotice] = useState('');
+  // Ein neuer GPS-Ort wird vor dem Endpunkt eingefügt. Start und Ende bleiben erhalten.
+  const stops = newStop
+    ? [...trip.stops.slice(0, -1), newStop, trip.stops[trip.stops.length - 1]]
+    : trip.stops;
+
+  function applyCurrentPlace(place: CurrentPlace) {
+    const nearby = findNearbyStop(trip.stops, place);
+    if (nearby) {
+      setNewStop(null);
+      setSelectedStop(nearby.id);
+      setLocationNotice(
+        `Reiseort in der Nähe ausgewählt: ${nearby.name}. Du kannst die Auswahl ändern.`,
+      );
+    } else {
+      // Der neue Standort gehört nur zum Entwurf und wird erst mit dem Eintrag gespeichert.
+      const stop: Stop = { ...place, id: createId(), entries: [] };
+      setNewStop(stop);
+      setSelectedStop(stop.id);
+      setLocationNotice(
+        `Neuer Zwischenstopp: ${place.name}. Wird mit dem Eintrag gespeichert.`,
+      );
+    }
+  }
+
   async function save() {
     if (saving) return;
     const iso = parseDate(date);
@@ -47,7 +75,7 @@ export default function EntryEditor({ trip, stopId, entry, onClose, onSaved }: P
     };
     const updated: Trip = {
       ...trip,
-      stops: trip.stops.map((stop) => {
+      stops: stops.map((stop) => {
         // Den alten Eintrag entfernen, auch wenn sein Standort geändert wurde.
         const entries = stop.entries.filter((item) => item.id !== draft.id);
         if (stop.id === selectedStop) entries.push(nextEntry);
@@ -108,11 +136,17 @@ export default function EntryEditor({ trip, stopId, entry, onClose, onSaved }: P
           />
           <Text style={shared.label}>STANDORT *</Text>
           <View style={styles.stops}>
-            {trip.stops.map((stop) => (
+            {stops.map((stop) => (
               <Pressable
                 accessibilityRole="button"
                 key={stop.id}
-                onPress={() => setSelectedStop(stop.id)}
+                accessibilityState={{ selected: selectedStop === stop.id }}
+                onPress={() => {
+                  setSelectedStop(stop.id);
+                  setLocationNotice('');
+                  // Ein nicht gewählter neuer GPS-Ort soll nicht versehentlich gespeichert werden.
+                  if (stop.id !== newStop?.id) setNewStop(null);
+                }}
                 style={[styles.stop, selectedStop === stop.id && styles.selectedStop]}
               >
                 <Text
@@ -126,6 +160,10 @@ export default function EntryEditor({ trip, stopId, entry, onClose, onSaved }: P
               </Pressable>
             ))}
           </View>
+          <LocationButton disabled={saving} onSelect={applyCurrentPlace} />
+          {locationNotice ? (
+            <Text style={[shared.small, { marginTop: 8 }]}>{locationNotice}</Text>
+          ) : null}
           <Text style={shared.label}>TAGEBUCHTEXT *</Text>
           <TextInput
             accessibilityLabel="Tagebuchtext"

@@ -94,3 +94,17 @@ Die Browser-Vorschau verwendet statt SQLite den Browser-Speicher und eine separa
 Verfolge eine Reise vom Eingabefeld über `prepareTrip`, `validateTrip` und `saveTrip` bis zu `writeTrip`. Erkläre danach, warum beim Abbrechen nichts gespeichert wird, warum Fotos dauerhaft kopiert werden und wie eine ID beim Bearbeiten den richtigen Standort erkennt. Ändere anschliessend selbst eine kleine Sache und prüfe das Ergebnis.
 
 Die Anleitung für getrennte Arbeitsschritte steht in [Git-Arbeitsweise](Git-Arbeitsweise.md).
+
+## Aktuellen Standort vorschlagen
+
+`LocationButton` wird im Reiseformular und im Tagebucheintrag wiederverwendet. Erst beim Tippen auf „Aktuellen Standort verwenden“ ruft er `getCurrentPlace` auf. Die App fragt die Berechtigung an und liest die Position einmalig. Sie zeichnet keinen Reiseverlauf im Hintergrund auf.
+
+`getCurrentPlace` in `src/lib/location.ts` verwendet `expo-location`. Nach erfolgreicher Messung sucht das Betriebssystem auf iOS und Android einen passenden Ortsnamen zu den Koordinaten. Diese Umwandlung heisst Reverse Geocoding und kann Internet benötigen. Falls sie nicht funktioniert, bleibt der Vorschlag „Aktueller Standort“ mit den Koordinaten verwendbar. Die Browser-Vorschau bietet nur Koordinaten und keinen automatisch ermittelten Ortsnamen.
+
+Der Vorschlag verändert noch keine Reisedaten. Erst „Standort übernehmen“ fügt ihn ins Formular ein. Im Reiseformular werden der Name und der Marker des gerade ausgewählten Standorts angepasst. Der Name lässt sich danach bearbeiten.
+
+Im Tagebuchformular sucht `findNearbyStop` einen vorhandenen Reiseort innerhalb von einem Kilometer. Es berechnet dazu die Luftlinie mit der Haversine-Formel und wählt den nächsten passenden Ort. Die Berechnung benötigt keine Karten-API und keine Internetverbindung. Liegt kein vorhandener Ort in der Nähe, wird ein neuer Standort vor dem Endpunkt eingefügt. Er wird erst gemeinsam mit dem Eintrag gespeichert. Wird stattdessen ein bestehender Ort ausgewählt oder das Formular geschlossen, wird der neue Entwurf nicht gespeichert. Bestehende Standortkoordinaten werden dabei nicht verschoben.
+
+Bei verweigerter Berechtigung, abgeschalteten Ortungsdiensten oder fehlendem Empfang erscheint ein Hinweis. Die manuelle Ortsauswahl bleibt möglich. Die Messung wartet höchstens 20 Sekunden auf eine Position; für den Ortsnamen werden höchstens weitere vier Sekunden gewartet.
+
+Für die Projektdokumentation gilt damit: Neben der Kamera verwendet Pin Map nun auch die Standortdienste des Smartphones für einen ausdrücklich angeforderten Standortvorschlag.

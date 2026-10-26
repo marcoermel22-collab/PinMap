@@ -19,6 +19,14 @@ Fünf Hauptansichten nach dem genehmigten Mockup, Reiseübersicht mit Suche und 
 
 Unter „Reiseverlauf“ im Formular werden Reiseende, Standorte und Reihenfolge bearbeitet. Im Detailbildschirm werden Standorte und Tagebucheinträge ausgewählt oder neue Einträge angelegt.
 
+## Standortvorschlag
+
+Im Reiseformular und im Tagebucheintrag gibt es „Aktuellen Standort verwenden“. Nach Freigabe wird die Position einmalig ermittelt und als Vorschlag angezeigt. „Standort übernehmen“ fügt sie ins Formular ein. Im Tagebuch wird ein vorhandener Reiseort innerhalb von 1 km ausgewählt oder ein neuer Zwischenstopp eingefügt. Gespeichert wird erst mit dem Formular. Die manuelle Auswahl bleibt immer möglich.
+
+Auf dem Smartphone versucht das Betriebssystem, zu den Koordinaten einen Ortsnamen zu finden. Das kann Internet benötigen. Ohne Ortsnamen sind die Koordinaten weiterhin nutzbar. Die Browser-Vorschau liefert nur Koordinaten. Es gibt keine Hintergrundaufzeichnung.
+
+Nach dem Hinzufügen von `expo-location` den Server mit Strg+C beenden und mit `npm.cmd run start:tunnel -- --clear` neu starten. Das Modul ist in der passenden Expo-Go-Version enthalten. Die Berechtigungsbeschreibung aus `app.json` gilt für eine neu gebaute eigenständige App; Expo Go verwendet seine eigene Abfrage.
+
 ## Code erklären
 
 Siehe [Code-Erklärung](docs/Code-erklaerung.md). Der Code verwendet wiederverwendbare Komponenten, einfachen lokalen State und einen gemeinsamen Context. Neue und bestehende Reisen benutzen dasselbe Formular.
@@ -59,6 +67,7 @@ Beispielbilder von Unsplash, lokal gebündelt, damit sie offline sichtbar sind:
 
 ## Dokumentation der verwendeten APIs
 
+- https://docs.expo.dev/versions/v58.0.0/sdk/location/
 - https://docs.expo.dev/versions/v58.0.0/sdk/sqlite/
 - https://docs.expo.dev/versions/v58.0.0/sdk/imagepicker/
 - https://docs.expo.dev/versions/v58.0.0/sdk/filesystem/

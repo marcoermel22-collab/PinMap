@@ -33,6 +33,15 @@
           "cameraPermission": "Pin Map benötigt die Kamera, damit du Reisefotos aufnehmen kannst.",
           "microphonePermission": false
         }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Pin Map verwendet deinen Standort, um dir beim Erfassen einer Reise oder eines Tagebucheintrags den aktuellen Ort vorzuschlagen.",
+          "isIosBackgroundLocationEnabled": false,
+          "isAndroidBackgroundLocationEnabled": false,
+          "isAndroidForegroundServiceEnabled": false
+        }
       ]
     ],
     "experiments": {
