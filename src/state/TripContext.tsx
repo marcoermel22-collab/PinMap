@@ -12,6 +12,7 @@ type TripContextValue = {
   saveTrip: (trip: Trip) => Promise<void>;
   deleteTrip: (id: string) => Promise<void>;
 };
+// Eine gemeinsame Reiseliste für Übersicht, Karte und Details.
 const TripContext = createContext<TripContextValue | null>(null);
 
 export function TripProvider({ children }: { children: ReactNode }) {
@@ -31,6 +32,7 @@ export function TripProvider({ children }: { children: ReactNode }) {
       .finally(() => setLoading(false));
   }
   useEffect(() => {
+    // Beim Öffnen der App einmal die dauerhaft gespeicherten Reisen laden.
     void reload();
   }, []);
 
@@ -39,7 +41,9 @@ export function TripProvider({ children }: { children: ReactNode }) {
     const copiedFiles: string[] = [];
     let saved: Trip;
     try {
+      // 1. Eine Kopie bearbeiten, damit Fehler die sichtbaren Daten nicht verändern.
       saved = JSON.parse(JSON.stringify(trip)) as Trip;
+      // 2. Neue Kamera- und Galeriefotos dauerhaft in den App-Speicher kopieren.
       for (const stop of saved.stops) {
         for (const entry of stop.entries) {
           const permanentPhotos: string[] = [];
@@ -51,13 +55,16 @@ export function TripProvider({ children }: { children: ReactNode }) {
           entry.photos = permanentPhotos;
         }
       }
+      // 3. Erst die Reise speichern, wenn alle Fotodateien vorhanden sind.
       await writeTrip(saved);
     } catch (error) {
+      // Bei einem Fehler nur die neu kopierten Dateien wieder entfernen.
       copiedFiles.forEach(deletePhoto);
       throw error;
     }
     // Erst nach erfolgreichem Speichern die sichtbare Liste aktualisieren.
     setTrips((current) => [...current.filter((item) => item.id !== saved.id), saved]);
+    // Entfernte Fotos erst nach dem erfolgreichen Speichern vom Gerät löschen.
     const retained = new Set(tripPhotos(saved));
     if (previous)
       tripPhotos(previous)

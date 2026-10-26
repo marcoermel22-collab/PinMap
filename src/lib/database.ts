@@ -2,6 +2,7 @@ import * as SQLite from 'expo-sqlite';
 import type { Trip } from '../types/trip';
 import { demoTrips } from './demo';
 
+// Alle Ansichten verwenden dieselbe Verbindung zur lokalen Datenbank.
 let connection: Promise<SQLite.SQLiteDatabase> | null = null;
 
 async function database() {
@@ -24,6 +25,7 @@ async function open() {
     'SELECT value FROM settings WHERE key = ?',
     'initialized',
   );
+  // Beispielreisen nur beim ersten Start anlegen, auch wenn später alle gelöscht werden.
   if (!initialized) {
     await db.withTransactionAsync(async () => {
       for (const trip of demoTrips) {
@@ -53,6 +55,8 @@ export async function loadTrips(): Promise<Trip[]> {
 
 export async function writeTrip(trip: Trip) {
   const db = await database();
+  // ? sind Platzhalter: Werte werden getrennt vom SQL übergeben.
+  // Die gleiche ID ersetzt eine Reise; eine neue ID legt eine Reise an.
   await db.runAsync(
     'INSERT OR REPLACE INTO trips (id, data) VALUES (?, ?)',
     trip.id,

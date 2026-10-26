@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  prepareTrip,
   parseDate,
   inputDate,
   validateTrip,
@@ -91,4 +92,46 @@ test('Fotos werden über mehrere Standorte und Einträge gesammelt', () => {
     photos: ['bild2', 'bild3'],
   });
   assert.deepEqual(tripPhotos(draft), ['bild1', 'bild2', 'bild3']);
+});
+
+// Beim Aufbereiten dürfen weder andere Einträge noch der Entwurf verloren gehen.
+test('Neue Reise übernimmt das Startdatum und lässt leere optionale Notizen weg', () => {
+  const draft = trip();
+  draft.title = '  Sommerreise  ';
+  draft.stops[0].name = '  Bern  ';
+  draft.stops[0].entries[0].title = 'Meine Erinnerung';
+  draft.stops[1].entries.push({
+    id: 'leer',
+    title: 'Meine Erinnerung',
+    date: '2026-07-12',
+    text: ' ',
+    photos: [],
+  });
+  const original = structuredClone(draft);
+  const prepared = prepareTrip(draft, '2026-07-13', '2026-07-19', true);
+  assert.equal(prepared.title, 'Sommerreise');
+  assert.equal(prepared.stops[0].name, 'Bern');
+  assert.equal(prepared.stops[0].entries[0].title, 'Sommerreise');
+  assert.equal(prepared.stops[0].entries[0].date, '2026-07-13');
+  assert.equal(prepared.stops[1].entries.length, 0);
+  assert.equal(validateTrip(prepared), null);
+  assert.deepEqual(draft, original);
+});
+
+test('Bearbeiten erhält mehrere Standorte, individuelle Einträge und reine Fotoerinnerungen', () => {
+  const draft = trip();
+  draft.stops[1].entries.push({
+    id: 'foto',
+    title: 'Eiffelturm',
+    date: '2026-07-14',
+    text: '',
+    photos: ['paris'],
+  });
+  const original = structuredClone(draft);
+  const prepared = prepareTrip(draft, '2026-07-11', '2026-07-20', false);
+  assert.equal(prepared.stops.length, 2);
+  assert.deepEqual(prepared.stops[0].entries, draft.stops[0].entries);
+  assert.deepEqual(prepared.stops[1].entries, draft.stops[1].entries);
+  assert.equal(validateTrip(prepared), null);
+  assert.deepEqual(draft, original);
 });

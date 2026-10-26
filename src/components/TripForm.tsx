@@ -12,7 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { createId, emptyStop, emptyTrip, type Trip } from '../types/trip';
 import { useTrips } from '../state/TripContext';
-import { inputDate, parseDate, validateTrip } from '../lib/trip-utils';
+import { inputDate, parseDate, prepareTrip, validateTrip } from '../lib/trip-utils';
 import { colors, shared } from '../lib/theme';
 import { Screen, Button, Icon, showError, confirmDelete } from './UI';
 import TripMap from './TripMap';
@@ -32,20 +32,23 @@ export default function TripForm({ original, initialStopId, initialEntryId }: Pr
   const [saving, setSaving] = useState(false);
   const { saveTrip, deleteTrip } = useTrips();
   const stop = draft.stops.find((item) => item.id === stopId) ?? draft.stops[0];
-  const firstEntry =
+  const selectedEntry =
     stop.entries.find((entry) => entry.id === initialEntryId) ?? stop.entries[0];
 
-  function updateStop(changes: Partial<typeof stop>) {
+  // Nur den betroffenen Standort ersetzen; alle anderen bleiben erhalten.
+  // Eine ID als zweites Argument erlaubt dieselbe Funktion auch in der Standortliste.
+  function updateStop(changes: Partial<typeof stop>, id = stop.id) {
     setDraft((current) => ({
       ...current,
       stops: current.stops.map((item) =>
-        item.id === stop.id ? { ...item, ...changes } : item,
+        item.id === id ? { ...item, ...changes } : item,
       ),
     }));
   }
 
-  function updateFirstEntry(changes: { text?: string; photos?: string[] }) {
-    const entry = firstEntry ?? {
+  // Text und Fotos gehören zum ausgewählten Eintrag des ausgewählten Standorts.
+  function updateEntry(changes: { text?: string; photos?: string[] }) {
+    const entry = selectedEntry ?? {
       id: createId(),
       title: draft.title || 'Meine Erinnerung',
       date: draft.startDate,
@@ -62,29 +65,14 @@ export default function TripForm({ original, initialStopId, initialEntryId }: Pr
 
   async function save() {
     if (saving) return;
-    const start = parseDate(date),
-      end = parseDate(endDate);
+    const start = parseDate(date);
+    const end = parseDate(endDate);
     if (!start || !end)
       return showError(
         'Bitte gib gültige Daten im Format TT.MM.JJJJ ein. Das Reiseende findest du unter Reiseverlauf.',
       );
-    const next = {
-      ...draft,
-      title: draft.title.trim(),
-      startDate: start,
-      endDate: end,
-      stops: draft.stops.map((item) => ({
-        ...item,
-        name: item.name.trim(),
-        entries: item.entries
-          .filter((entry) => entry.text.trim() || entry.photos.length)
-          .map((entry) => ({
-            ...entry,
-            date: !original ? start : entry.date,
-            title: entry.title === 'Meine Erinnerung' ? draft.title.trim() : entry.title,
-          })),
-      })),
-    };
+    // Eingaben aufbereiten und prüfen, bevor die Datenbank verändert wird.
+    const next = prepareTrip(draft, start, end, !original);
     const error = validateTrip(next);
     if (error) {
       if (next.stops.some((item) => !item.name)) setRouteOpen(true);
@@ -172,8 +160,8 @@ export default function TripForm({ original, initialStopId, initialEntryId }: Pr
       <Text style={shared.label}>KURZER TEXT / NOTIZ</Text>
       <TextInput
         accessibilityLabel="Kurzer Text oder Notiz"
-        value={firstEntry?.text ?? ''}
-        onChangeText={(text) => updateFirstEntry({ text })}
+        value={selectedEntry?.text ?? ''}
+        onChangeText={(text) => updateEntry({ text })}
         placeholder="Was hast du erlebt? (Optional)"
         placeholderTextColor="#9DA2AF"
         style={[shared.input, styles.textarea]}
@@ -203,21 +191,21 @@ export default function TripForm({ original, initialStopId, initialEntryId }: Pr
       </Pressable>
       <Text style={shared.label}>
         {original
-          ? `FOTOS VERWALTEN (${firstEntry?.photos.length ?? 0} GESPEICHERT)`
+          ? `FOTOS VERWALTEN (${selectedEntry?.photos.length ?? 0} GESPEICHERT)`
           : 'FOTOS HINZUFÜGEN (SPECIAL FEATURE)'}
       </Text>
       <PhotoGrid
-        photos={firstEntry?.photos ?? []}
+        photos={selectedEntry?.photos ?? []}
         onRemove={(uri) =>
-          updateFirstEntry({
-            photos: (firstEntry?.photos ?? []).filter((photo) => photo !== uri),
+          updateEntry({
+            photos: (selectedEntry?.photos ?? []).filter((photo) => photo !== uri),
           })
         }
       />
       <PhotoButtons
         onAdd={(photos) => {
           if (photos.length)
-            updateFirstEntry({ photos: [...(firstEntry?.photos ?? []), ...photos] });
+            updateEntry({ photos: [...(selectedEntry?.photos ?? []), ...photos] });
         }}
       />
       <Button
@@ -295,14 +283,7 @@ export default function TripForm({ original, initialStopId, initialEntryId }: Pr
                 <TextInput
                   accessibilityLabel={`Standort ${index + 1}`}
                   value={item.name}
-                  onChangeText={(name) =>
-                    setDraft((current) => ({
-                      ...current,
-                      stops: current.stops.map((s) =>
-                        s.id === item.id ? { ...s, name } : s,
-                      ),
-                    }))
-                  }
+                  onChangeText={(name) => updateStop({ name }, item.id)}
                   placeholder="Name des Ortes"
                   style={[shared.input, { marginTop: 8 }]}
                 />

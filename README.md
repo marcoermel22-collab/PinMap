@@ -23,6 +23,10 @@ Unter „Reiseverlauf“ im Formular werden Reiseende, Standorte und Reihenfolge
 
 Siehe [Code-Erklärung](docs/Code-erklaerung.md). Der Code verwendet wiederverwendbare Komponenten, einfachen lokalen State und einen gemeinsamen Context. Neue und bestehende Reisen benutzen dasselbe Formular.
 
+## GitHub und GitLab
+
+Der vollständige Stand liegt auf GitHub. Wie ihr einzelne Änderungen auswählt und später auf GitLab übernehmt, steht in [Git-Arbeitsweise](docs/Git-Arbeitsweise.md).
+
 ## Prüfungen
 
 ```powershell

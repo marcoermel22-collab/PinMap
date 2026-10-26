@@ -47,13 +47,12 @@ export default function EntryEditor({ trip, stopId, entry, onClose, onSaved }: P
     };
     const updated: Trip = {
       ...trip,
-      stops: trip.stops.map((stop) => ({
-        ...stop,
-        entries: [
-          ...stop.entries.filter((item) => item.id !== draft.id),
-          ...(stop.id === selectedStop ? [nextEntry] : []),
-        ],
-      })),
+      stops: trip.stops.map((stop) => {
+        // Den alten Eintrag entfernen, auch wenn sein Standort geändert wurde.
+        const entries = stop.entries.filter((item) => item.id !== draft.id);
+        if (stop.id === selectedStop) entries.push(nextEntry);
+        return { ...stop, entries };
+      }),
     };
     const error = validateTrip(updated);
     if (error) return showError(error);

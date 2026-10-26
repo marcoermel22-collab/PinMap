@@ -64,3 +64,33 @@ Das gleiche `TripForm` dient zum Erfassen und Bearbeiten. Buttons, Navigation, F
 Kameraberechtigung erlauben und verweigern, ein echtes Foto aufnehmen, Bilder aus der Galerie hinzufügen, die App vollständig schliessen und erneut öffnen, Offline-Anzeige der gespeicherten Inhalte und die native Karte. Die Hintergrundkarte benötigt eventuell Internet.
 
 Die Browser-Vorschau verwendet statt SQLite den Browser-Speicher und eine separate Webkarte. Sie ersetzt diese Gerätetests nicht.
+
+## Die wichtigsten Funktionen selbst erklären
+
+`prepareTrip` bereitet die Formulareingaben vor. Es entfernt überflüssige Leerzeichen und leere optionale Notizen. Bei einer neuen Reise bekommt die erste Erinnerung das gewählte Startdatum. Beim Bearbeiten bleiben die individuellen Eintragsdaten erhalten.
+
+`validateTrip` prüft nacheinander Titel, Zeitraum, Standorte und Einträge. Beim ersten Fehler liefert es einen verständlichen Text zurück. Sind die Daten gültig, kommt `null` zurück. Beide Formulare verwenden dieselbe Prüfung.
+
+`updateStop` ersetzt nur den Standort mit der passenden ID. Die gleiche Funktion bedient das Hauptformular und die Liste der Standorte. So steht dieselbe Änderung nicht zweimal im Code.
+
+`updateEntry` verändert die Notiz oder Fotos des ausgewählten Eintrags. `EntryEditor` verwendet für neue und bestehende Tagebucheinträge ebenfalls ein gemeinsames Formular. Wird der Standort eines Eintrags gewechselt, entfernt es ihn am alten Ort und fügt ihn am neuen ein.
+
+`tripPhotos` sammelt die Fotopfade aller Einträge. Die eigentlichen Bilder liegen im App-Speicher; in der Reise stehen nur ihre Pfade.
+
+`filterTrips` prüft zuerst den aktiven Filter und durchsucht danach Titel, Orte und Tagebuchtexte. Die Suche vergleicht alles in Kleinschreibung.
+
+## Häufige Schreibweisen
+
+`map` erzeugt aus einer Liste eine neue Liste, beispielsweise mit einem geänderten Standort. `filter` behält nur die passenden Elemente, beispielsweise alle Reisen ausser der gelöschten. `find` sucht ein einzelnes Element anhand seiner ID. `flatMap` fasst Listen zusammen, hier die Einträge aller Standorte.
+
+`...current` übernimmt die bisherigen Eigenschaften eines Objekts. Die nachfolgende Eigenschaft ersetzt gezielt einen Wert. React bekommt dadurch ein neues Objekt und kann die Änderung anzeigen.
+
+`setDraft((current) => ...)` arbeitet mit dem neuesten Formularstand. `Partial<Stop>` bedeutet, dass nur die zu ändernden Standortfelder übergeben werden müssen. TypeScript prüft diese Typen während der Entwicklung; die Eingabeprüfung übernimmt weiterhin `validateTrip`.
+
+`try` führt den Speichervorgang aus. `catch` behandelt einen Fehler. `finally` beendet den Ladezustand auch bei einem Fehler. `void save()` startet die asynchrone Funktion im Button; die Fehlerbehandlung steht innerhalb von `save`.
+
+## Übung für das Fachgespräch
+
+Verfolge eine Reise vom Eingabefeld über `prepareTrip`, `validateTrip` und `saveTrip` bis zu `writeTrip`. Erkläre danach, warum beim Abbrechen nichts gespeichert wird, warum Fotos dauerhaft kopiert werden und wie eine ID beim Bearbeiten den richtigen Standort erkennt. Ändere anschliessend selbst eine kleine Sache und prüfe das Ergebnis.
+
+Die Anleitung für getrennte Arbeitsschritte steht in [Git-Arbeitsweise](Git-Arbeitsweise.md).
